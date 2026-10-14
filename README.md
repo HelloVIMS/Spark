@@ -154,6 +154,18 @@ Environment=VLLM_GPU_MEM_UTIL=0.75
   inside a script; a test run can raise a limit and have it revert
   cleanly afterward.
 
+## Relationship to VIMS
+
+If you run [VIMS](https://github.com/hellovims/vims), its inference
+manager enforces the same budget natively: `LaunchPlan` sums
+`--gpu-memory-utilization` across every `vllm serve` on the host
+(including ones it did not launch) and refuses over-budget plans, and
+`serving.json` carries `memory_budget`, `cpu_share` and per-model
+`model_gpu_util_overrides`. The two layers compose cleanly — VIMS guards
+launches it owns (`vims-server vllm-exec <model>` in the unit), spark's
+bash guard catches launches it doesn't (third-party units, hand-rolled
+scripts, pooling models outside the catalog).
+
 ## Layout
 
 ```
