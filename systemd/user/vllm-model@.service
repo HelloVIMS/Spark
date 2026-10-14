@@ -1,0 +1,18 @@
+[Unit]
+Description=vLLM %i (guarded launcher, port 8000)
+After=network.target
+
+[Service]
+Type=simple
+# Template unit: `systemctl --user start vllm-model@<name>` runs a model
+# whose spec lives in ~/.config/spark/models/<name>.env (installed
+# examples in config/models/). Set VLLM_MODEL, VLLM_PORT and flags there.
+EnvironmentFile=-%h/.config/spark/models/%i.env
+ExecStart=%h/.local/share/spark/bin/vllm-serve.sh ${VLLM_EXTRA_ARGS}
+Restart=on-failure
+RestartSec=10
+StandardOutput=append:/tmp/vllm-%i.log
+StandardError=append:/tmp/vllm-%i.log
+
+[Install]
+WantedBy=default.target

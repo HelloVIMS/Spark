@@ -1,0 +1,24 @@
+[Unit]
+Description=vLLM Vision+Agent (BF16, tool calling, port 8000)
+After=network.target
+Conflicts=vllm-longcontext.service
+
+[Service]
+Type=simple
+Environment=VLLM_NAME=vision-agent
+Environment=VLLM_MODEL=Qwen3.6-35B-A3B
+Environment=VLLM_PORT=8000
+Environment=VLLM_GPU_MEM_UTIL=0.70
+ExecStart=%h/.local/share/spark/bin/vllm-serve.sh \
+    --dtype bfloat16 \
+    --max-model-len 10240 \
+    --enable-auto-tool-choice \
+    --tool-call-parser qwen3_xml \
+    --disable-custom-all-reduce
+Restart=on-failure
+RestartSec=10
+StandardOutput=append:/tmp/vllm-vision-agent.log
+StandardError=append:/tmp/vllm-vision-agent.log
+
+[Install]
+WantedBy=default.target

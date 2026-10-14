@@ -1,0 +1,26 @@
+[Unit]
+Description=vLLM Embeddings (always-on, port 8001)
+After=network.target
+
+[Service]
+Type=simple
+# Small fixed cost every other model has to be sized around. The launcher
+# resolves the name under MODELS_DIR from spark.conf.
+Environment=VLLM_NAME=embeddings
+Environment=VLLM_MODEL=bge-base-en-v1.5
+Environment=VLLM_PORT=8001
+Environment=VLLM_GPU_MEM_UTIL=0.10
+ExecStart=%h/.local/share/spark/bin/vllm-serve.sh \
+    --runner pooling \
+    --convert embed \
+    --dtype bfloat16 \
+    --max-model-len 512 \
+    --max-num-seqs=32 \
+    --disable-custom-all-reduce
+Restart=on-failure
+RestartSec=10
+StandardOutput=append:/tmp/vllm-embeddings.log
+StandardError=append:/tmp/vllm-embeddings.log
+
+[Install]
+WantedBy=default.target

@@ -1,0 +1,34 @@
+[Unit]
+Description=vLLM Long Context (128K ctx, port 8000)
+After=network.target
+# Port-8000 models are mutually exclusive; stopping peers is handled by
+# the run-model.sh helper, not here.
+Conflicts=vllm-vision-agent.service
+
+[Service]
+Type=simple
+# 0.70 + the always-on 0.10 embeddings = the 0.80 budget exactly.
+# Long context is paid for in KV cache; if it wedges on long prompts,
+# raise VLLM_GPU_MEM_UTIL via a drop-in (and accept swap) rather than
+# re-inflating a default that reintroduces an impossible sum.
+Environment=VLLM_NAME=longcontext
+Environment=VLLM_MODEL=Qwen3.6-35B-A3B-NVFP4
+Environment=VLLM_PORT=8000
+Environment=VLLM_GPU_MEM_UTIL=0.70
+ExecStart=%h/.local/share/spark/bin/vllm-serve.sh \
+    --quantization compressed-tensors \
+    --language-model-only \
+    --dtype bfloat16 \
+    --max-model-len 131072 \
+    --kv-cache-dtype=fp8_e4m3 \
+    --max-num-seqs=1 \
+    --max-num-batched-tokens=32768 \
+    --generation-config=vllm \
+    --disable-custom-all-reduce
+Restart=on-failure
+RestartSec=10
+StandardOutput=append:/tmp/vllm-longcontext.log
+StandardError=append:/tmp/vllm-longcontext.log
+
+[Install]
+WantedBy=default.target
